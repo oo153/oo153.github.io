@@ -34,7 +34,8 @@ exports.onCreateNode = ({ node, actions, getNode }) => {
 
 exports.createPages = async ({ graphql, actions }) => {
     const { createPage } = actions;
-    const result = await graphql(`
+    // 先查询文章列表数据
+    const listResult = await graphql(`
         query {
             allMarkdownRemark {
                 edges {
@@ -42,12 +43,26 @@ exports.createPages = async ({ graphql, actions }) => {
                         fields {
                             slug
                         }
+                        frontmatter {
+                            title
+                            date
+                        }
                     }
                 }
             }
         }
     `);
-    result.data.allMarkdownRemark.edges.forEach(({ node }) => {
+    // 创建文章列表页面
+    createPage({
+        path: "/",
+        component: path.resolve("./src/templates/blog-list.js"),
+        context: {
+            posts: listResult.data.allMarkdownRemark.edges
+        }
+    });
+
+
+    listResult.data.allMarkdownRemark.edges.forEach(({ node }) => {
         const slug = node.fields.slug;
         createPage({
             // 这里要根据实际的路径规则来构建，比如以 /blog/ 开头加上slug作为完整路径
@@ -58,4 +73,19 @@ exports.createPages = async ({ graphql, actions }) => {
             }
         });
     });
+
+  createPage({
+    path: "/using-dsg",
+    component: require.resolve("./src/templates/using-dsg.js"),
+    context: {},
+    defer: true,
+  })
+
+  createPage({
+    path: "/1ndex",
+    component: require.resolve("./src/pages/1ndex.js"),
+    context: {},
+    defer: true,
+  })
+
 };
